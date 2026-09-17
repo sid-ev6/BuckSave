@@ -261,3 +261,32 @@
 .spending-limit-cancel:hover {
   background: #f3f4f6;
 }
+
+.view-expenses-button {
+  width: 100%;
+  margin-top: 14px;
+  padding: 11px 16px;
+
+  border: none;
+  border-radius: 8px;
+
+  font-size: 14px;
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    opacity 0.2s ease;
+}
+
+.view-expenses-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
+}
+
+.view-expenses-button:active {
+  transform: translateY(0);
+  box-shadow: none;
+}

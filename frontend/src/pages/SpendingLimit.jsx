@@ -660,18 +660,17 @@ function SpendingLimit() {
 
                 {/* VIEW EXPENSES */}
 
-                <button
-                  type="button"
-                  onClick={() =>
-                    navigate(
-                      `/expenses?spendingLimitId=${limit.id}`
-                    )
-                  }
-                >
-
-                  View Expenses
-
-                </button>
+            <button
+  type="button"
+  className="view-expenses-button"
+  onClick={() =>
+    navigate(
+      `/expenses?spendingLimitId=${limit.id}`
+    )
+  }
+>
+  View Expenses →
+</button>
 
 
                 {/* ACTIONS */}
