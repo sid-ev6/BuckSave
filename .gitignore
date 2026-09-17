@@ -1,0 +1,19 @@
+# Environment/secrets
+.env
+backend/.env
+
+# Spring Boot
+backend/target/
+
+# React
+frontend/node_modules/
+frontend/dist/
+frontend/build/
+
+# IntelliJ
+.idea/
+*.iml
+
+
+backend/src/main/resources/application.properties
+

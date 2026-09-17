@@ -1,0 +1,280 @@
+.dashboard-page {
+  min-height: 100vh;
+  background: #f5f7fb;
+  padding: 32px;
+  padding-bottom: 100px;
+}
+
+.dashboard-header {
+  max-width: 1200px;
+  margin: 0 auto 30px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.dashboard-header h1 {
+  margin: 0;
+  font-size: 30px;
+}
+
+.dashboard-header p {
+  color: #6b7280;
+  margin-top: 8px;
+}
+
+.add-expense-button {
+  background: #111827;
+  color: white;
+  padding: 12px 18px;
+  border-radius: 10px;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.dashboard-cards {
+  max-width: 1200px;
+  margin: 0 auto 30px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 18px;
+}
+
+.dashboard-card {
+  background: white;
+  padding: 22px;
+  border-radius: 16px;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.05);
+}
+
+.dashboard-card p {
+  color: #6b7280;
+  margin: 0 0 10px;
+}
+
+.dashboard-card h2 {
+  margin: 0;
+  font-size: 25px;
+}
+
+.dashboard-content {
+  max-width: 1200px;
+  margin: auto;
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: 20px;
+}
+
+.dashboard-panel {
+  background: white;
+  padding: 24px;
+  border-radius: 16px;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.05);
+}
+
+.dashboard-panel h2 {
+  margin-top: 0;
+}
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.panel-header a {
+  color: #111827;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.expense-row,
+.category-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 0;
+  border-bottom: 1px solid #eee;
+}
+
+.expense-row div {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.expense-row span {
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.category-row:last-child,
+.expense-row:last-child {
+  border-bottom: none;
+}
+
+.dashboard-nav {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: white;
+  padding: 14px 22px;
+  border-radius: 16px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+  display: flex;
+  gap: 25px;
+}
+
+.dashboard-nav a {
+  text-decoration: none;
+  color: #374151;
+  font-weight: 500;
+}
+
+@media (max-width: 800px) {
+
+  .dashboard-page {
+    padding: 20px;
+  }
+
+  .dashboard-header {
+    align-items: flex-start;
+    gap: 20px;
+    flex-direction: column;
+  }
+
+  .dashboard-cards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .dashboard-content {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-nav {
+    width: calc(100% - 40px);
+    justify-content: space-around;
+    gap: 5px;
+  }
+
+  .dashboard-nav a {
+    font-size: 13px;
+  }
+}
+/* Spending Limit Card */
+
+.budget-card {
+  min-width: 0;
+}
+
+.budget-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.budget-card-header p {
+  margin: 0;
+}
+
+.budget-card-header a {
+  color: #111827;
+  background: #f3f4f6;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 7px 12px;
+  border-radius: 7px;
+  border: 1px solid #d1d5db;
+  transition: 0.2s ease;
+}
+
+.budget-card-header a:hover {
+  background: #e5e7eb;
+  border-color: #9ca3af;
+}
+
+.budget-card h2 {
+  margin: 0;
+  font-size: 25px;
+}
+
+.budget-remaining-text {
+  color: #6b7280;
+  font-size: 13px;
+  margin: 4px 0 12px !important;
+}
+
+.budget-progress {
+  width: 100%;
+  height: 7px;
+  background: #e5e7eb;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.budget-progress-bar {
+  height: 7px;
+  background: #111827;
+  border-radius: 10px;
+  transition: width 0.3s ease;
+}
+.budget-progress-bar.budget-progress-exceeded {
+  background: #dc2626;
+}
+
+.budget-card-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.budget-card-footer span {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: #374151;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.budget-card-footer strong {
+  color: #111827;
+  font-size: 16px;
+  font-weight: 700;
+}
+.budget-card .budget-remaining-text {
+  color: #6b7280;
+}
+
+.budget-card-exceeded {
+  color: #dc2626;
+  font-weight: 600;
+}
+.budget-card-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.budget-card-footer span {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  color: #6b7280;
+  font-size: 12px;
+}
+
+.budget-card-footer strong {
+  color: #111827;
+  font-size: 15px;
+  font-weight: 700;
+}
+.budget-progress-exceeded {
+  background: #dc2626;
+}

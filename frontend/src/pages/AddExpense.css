@@ -1,0 +1,108 @@
+.add-expense-page {
+  min-height: 100vh;
+  background: #f5f7fb;
+  padding: 40px 20px;
+}
+
+.add-expense-container {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.add-expense-header {
+  margin-bottom: 30px;
+}
+
+.add-expense-header h1 {
+  margin: 0;
+  font-size: 30px;
+  color: #111827;
+}
+
+.add-expense-header p {
+  margin-top: 8px;
+  color: #6b7280;
+}
+
+.add-expense-card {
+  background: white;
+  padding: 30px;
+  border-radius: 20px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
+}
+
+.expense-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.expense-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.expense-field label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.expense-field input,
+.expense-field select {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 13px 14px;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  font-size: 15px;
+  outline: none;
+  background: white;
+}
+
+.expense-field input:focus,
+.expense-field select:focus {
+  border-color: #111827;
+}
+
+.expense-submit {
+  margin-top: 10px;
+  padding: 14px;
+  border: none;
+  border-radius: 10px;
+  background: #111827;
+  color: white;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.expense-submit:hover {
+  opacity: 0.9;
+}
+
+.expense-cancel {
+  display: block;
+  text-align: center;
+  margin-top: 15px;
+  color: #6b7280;
+  text-decoration: none;
+  font-size: 14px;
+}
+
+.expense-cancel:hover {
+  color: #111827;
+}
+.expense-cancel {
+  display: block;
+  text-align: center;
+  margin-top: 15px;
+  color: #6b7280;
+  text-decoration: none;
+  font-size: 14px;
+}
+
+.expense-cancel:hover {
+  color: #111827;
+}

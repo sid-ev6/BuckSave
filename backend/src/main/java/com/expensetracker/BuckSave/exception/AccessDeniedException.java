@@ -1,0 +1,8 @@
+package com.expensetracker.BuckSave.exception;
+
+public class AccessDeniedException extends RuntimeException {
+
+    public AccessDeniedException(String message) {
+        super(message);
+    }
+}

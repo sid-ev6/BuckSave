@@ -1,0 +1,161 @@
+.expenses-page {
+  min-height: 100vh;
+  background: #f5f7fb;
+  padding: 40px 20px;
+}
+
+.expenses-container {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.expenses-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+}
+
+.expenses-header h1 {
+  margin: 0;
+  font-size: 30px;
+  color: #111827;
+}
+
+.expenses-header p {
+  margin-top: 8px;
+  color: #6b7280;
+}
+
+.add-expense-button {
+  display: inline-block;
+  padding: 12px 18px;
+  background: #111827;
+  color: white;
+  text-decoration: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.add-expense-button:hover {
+  opacity: 0.9;
+}
+
+.expenses-card {
+  background: white;
+  border-radius: 20px;
+  padding: 25px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
+}
+
+.expenses-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.expense-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 5px;
+  border-bottom: 1px solid #eef0f3;
+}
+
+.expense-item:last-child {
+  border-bottom: none;
+}
+
+.expense-category {
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 5px;
+}
+
+.expense-description {
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.expense-date {
+  color: #9ca3af;
+  font-size: 13px;
+  margin-top: 5px;
+}
+
+.expense-amount {
+  font-weight: 700;
+  color: #111827;
+}
+
+.expenses-message {
+  text-align: center;
+  padding: 50px 20px;
+  color: #6b7280;
+}
+
+.expenses-message h3 {
+  color: #111827;
+  margin-bottom: 8px;
+}
+
+.expenses-message p {
+  margin-bottom: 20px;
+}
+
+@media (max-width: 600px) {
+  .expenses-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 15px;
+  }
+
+  .expense-item {
+    gap: 15px;
+  }
+}
+.expense-actions {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.delete-expense-button {
+  padding: 8px 12px;
+  border: 1px solid #dc2626;
+  border-radius: 8px;
+  background: white;
+  color: #dc2626;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.delete-expense-button:hover {
+  background: #dc2626;
+  color: white;
+}
+
+@media (max-width: 600px) {
+  .expense-actions {
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+  }
+}
+.edit-expense-button {
+  padding: 8px 12px;
+  border: 1px solid #2563eb;
+  border-radius: 8px;
+  background: white;
+  color: #2563eb;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.edit-expense-button:hover {
+  background: #2563eb;
+  color: white;
+}
