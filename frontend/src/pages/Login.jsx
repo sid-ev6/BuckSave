@@ -1,5 +1,8 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import {
+  Link,
+  useNavigate
+} from "react-router-dom";
 import api from "../services/api";
 import "./Login.css";
 
@@ -95,6 +98,12 @@ function Login() {
           >
             Login
           </button>
+          <Link
+  to="/forgot-password"
+  className="forgot-password-link"
+>
+  Forgot Password?
+</Link>
 
         </form>
 

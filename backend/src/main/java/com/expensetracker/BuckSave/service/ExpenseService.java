@@ -16,7 +16,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.Comparator;
@@ -26,7 +25,7 @@ import java.util.stream.Collectors;
 
 @Service
 public class ExpenseService {
-//temp user
+
     private final UserRepository userRepository;
     private final ExpenseRepository expenseRepository;
     private final CategoryRepository categoryRepository;
@@ -35,7 +34,8 @@ public class ExpenseService {
     public ExpenseService(
             ExpenseRepository expenseRepository,
             CategoryRepository categoryRepository,
-            UserRepository userRepository, SpendingLimitService spendingLimitService) {
+            UserRepository userRepository,
+            SpendingLimitService spendingLimitService) {
 
         this.expenseRepository = expenseRepository;
         this.categoryRepository = categoryRepository;
@@ -43,50 +43,112 @@ public class ExpenseService {
         this.spendingLimitService = spendingLimitService;
     }
 
+
+    // ==========================================
+    // GET LOGGED-IN USER
+    // ==========================================
+
     private User getLoggedInUser() {
 
         Authentication authentication =
-                SecurityContextHolder.getContext().getAuthentication();
+                SecurityContextHolder
+                        .getContext()
+                        .getAuthentication();
 
         String email = authentication.getName();
 
         return userRepository.findByEmail(email)
                 .orElseThrow(() ->
-                        new ResourceNotFoundException("Expense not found"));
+                        new ResourceNotFoundException(
+                                "User not found"
+                        ));
     }
 
-    public ExpenseResponse createExpense(ExpenseRequest request) {
 
-        Authentication authentication =
-                SecurityContextHolder.getContext().getAuthentication();
+    // ==========================================
+    // CHECK CATEGORY ACCESS
+    // ==========================================
 
-        String email = authentication.getName();
+    private void validateCategoryAccess(
+            Category category,
+            User user) {
 
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() ->
-                        new RuntimeException("User not found"));
+        /*
+         * user == null
+         *     → shared default category
+         *     → everyone can use it
+         *
+         * user != null
+         *     → custom category
+         *     → only its owner can use it
+         */
 
-        Category category = categoryRepository.findById(request.getCategoryId())
-                .orElseThrow(() ->
-                        new ResourceNotFoundException("Category not found"));
+        if (category.getUser() != null
+                && !category.getUser()
+                .getId()
+                .equals(user.getId())) {
 
-        // Checks this category belongs to the logged-in user
-        if (!category.getUser().getId().equals(user.getId())) {
-            throw new RuntimeException(
+            throw new AccessDeniedException(
                     "You are not allowed to use this category"
             );
         }
+    }
 
-        Expense expense = new Expense();
 
-        expense.setAmount(request.getAmount());
-        expense.setDescription(request.getDescription());
-        expense.setDate(request.getDate());
-        expense.setCategory(category);
-        expense.setUser(user);
+    // ==========================================
+    // CREATE EXPENSE
+    // ==========================================
+
+    public ExpenseResponse createExpense(
+            ExpenseRequest request) {
+
+        User user = getLoggedInUser();
+
+
+        Category category =
+                categoryRepository
+                        .findById(request.getCategoryId())
+                        .orElseThrow(() ->
+                                new ResourceNotFoundException(
+                                        "Category not found"
+                                ));
+
+
+        // Shared defaults are allowed.
+        // Another user's custom category is blocked.
+        validateCategoryAccess(
+                category,
+                user
+        );
+
+
+        Expense expense =
+                new Expense();
+
+        expense.setAmount(
+                request.getAmount()
+        );
+
+        expense.setDescription(
+                request.getDescription()
+        );
+
+        expense.setDate(
+                request.getDate()
+        );
+
+        expense.setCategory(
+                category
+        );
+
+        expense.setUser(
+                user
+        );
+
 
         Expense savedExpense =
                 expenseRepository.save(expense);
+
 
         return new ExpenseResponse(
                 savedExpense.getId(),
@@ -97,22 +159,26 @@ public class ExpenseService {
                 savedExpense.getCategory().getName()
         );
     }
+
+
+    // ==========================================
+    // GET ALL EXPENSES
+    // ==========================================
+
     public List<ExpenseResponse> getAllExpenses() {
 
-        Authentication authentication =
-                SecurityContextHolder.getContext().getAuthentication();
+        User user = getLoggedInUser();
 
-        String email = authentication.getName();
 
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException("User not found"));
+        List<Expense> expenses =
+                expenseRepository.findByUser(user);
 
-        List<Expense> expenses = expenseRepository.findByUser(user);
 
         return expenses.stream()
                 .sorted(
-                        Comparator.comparing(Expense::getDate)
+                        Comparator.comparing(
+                                        Expense::getDate
+                                )
                                 .reversed()
                                 .thenComparing(
                                         Expense::getCreatedAt,
@@ -121,187 +187,200 @@ public class ExpenseService {
                                         )
                                 )
                 )
-                .map(expense -> new ExpenseResponse(
-                        expense.getId(),
-                        expense.getAmount(),
-                        expense.getDescription(),
-                        expense.getDate(),
-                        expense.getCategory().getId(),
-                        expense.getCategory().getName()
-                ))
+                .map(expense ->
+                        new ExpenseResponse(
+                                expense.getId(),
+                                expense.getAmount(),
+                                expense.getDescription(),
+                                expense.getDate(),
+                                expense.getCategory() != null
+                                        ? expense.getCategory().getId()
+                                        : null,
+                                expense.getCategory() != null
+                                        ? expense.getCategory().getName()
+                                        : null
+                        )
+                )
                 .toList();
     }
 
-    public ExpenseResponse getExpenseById(Long id) {
+
+    // ==========================================
+    // GET EXPENSE BY ID
+    // ==========================================
+
+    public ExpenseResponse getExpenseById(
+            Long id) {
+
+        User user = getLoggedInUser();
 
 
-        Authentication authentication =
-                SecurityContextHolder.getContext().getAuthentication();
+        Expense expense =
+                expenseRepository.findById(id)
+                        .orElseThrow(() ->
+                                new ResourceNotFoundException(
+                                        "Expense not found"
+                                ));
 
-        String email = authentication.getName();
 
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException("User not found"));
+        if (!expense.getUser()
+                .getId()
+                .equals(user.getId())) {
 
-        Expense expense = expenseRepository.findById(id)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException("Expense not found"));
-
-        if (!expense.getUser().getId().equals(user.getId())) {
             throw new AccessDeniedException(
-                    "You are not allowed to access this expense");
+                    "You are not allowed to access this expense"
+            );
         }
+
 
         return new ExpenseResponse(
                 expense.getId(),
                 expense.getAmount(),
                 expense.getDescription(),
                 expense.getDate(),
-                expense.getCategory().getId(),
-                expense.getCategory().getName()
+                expense.getCategory() != null
+                        ? expense.getCategory().getId()
+                        : null,
+                expense.getCategory() != null
+                        ? expense.getCategory().getName()
+                        : null
         );
     }
-    public ExpenseResponse updateExpense(Long id, ExpenseRequest request) {
 
-        Authentication authentication =
-                SecurityContextHolder.getContext().getAuthentication();
 
-        String email = authentication.getName();
+    // ==========================================
+    // UPDATE EXPENSE
+    // ==========================================
 
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException("User not found"));
+    public ExpenseResponse updateExpense(
+            Long id,
+            ExpenseRequest request) {
 
-        Expense expense = expenseRepository.findById(id)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException("Expense not found"));
+        User user = getLoggedInUser();
 
-        if (!expense.getUser().getId().equals(user.getId())) {
+
+        Expense expense =
+                expenseRepository.findById(id)
+                        .orElseThrow(() ->
+                                new ResourceNotFoundException(
+                                        "Expense not found"
+                                ));
+
+
+        if (!expense.getUser()
+                .getId()
+                .equals(user.getId())) {
+
             throw new AccessDeniedException(
-                    "You are not allowed to update this expense");
+                    "You are not allowed to update this expense"
+            );
         }
 
-        Category category = categoryRepository.findById(request.getCategoryId())
-                .orElseThrow(() ->
-                        new ResourceNotFoundException("Category not found"));
 
-        expense.setAmount(request.getAmount());
-        expense.setDescription(request.getDescription());
-        expense.setDate(request.getDate());
-        expense.setCategory(category);
+        Category category =
+                categoryRepository
+                        .findById(request.getCategoryId())
+                        .orElseThrow(() ->
+                                new ResourceNotFoundException(
+                                        "Category not found"
+                                ));
 
-        Expense updatedExpense = expenseRepository.save(expense);
+
+        // Important:
+        // shared default category → allowed
+        // another user's custom category → blocked
+        validateCategoryAccess(
+                category,
+                user
+        );
+
+
+        expense.setAmount(
+                request.getAmount()
+        );
+
+        expense.setDescription(
+                request.getDescription()
+        );
+
+        expense.setDate(
+                request.getDate()
+        );
+
+        expense.setCategory(
+                category
+        );
+
+
+        Expense updatedExpense =
+                expenseRepository.save(expense);
+
 
         return new ExpenseResponse(
                 updatedExpense.getId(),
                 updatedExpense.getAmount(),
                 updatedExpense.getDescription(),
                 updatedExpense.getDate(),
-                updatedExpense.getCategory().getId(),
-                updatedExpense.getCategory().getName()
+                updatedExpense.getCategory() != null
+                        ? updatedExpense.getCategory().getId()
+                        : null,
+                updatedExpense.getCategory() != null
+                        ? updatedExpense.getCategory().getName()
+                        : null
         );
     }
 
+
+    // ==========================================
+    // DELETE EXPENSE
+    // ==========================================
+
     public void deleteExpense(Long id) {
 
-        Authentication authentication =
-                SecurityContextHolder.getContext().getAuthentication();
+        User user = getLoggedInUser();
 
-        String email = authentication.getName();
 
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException("User not found"));
+        Expense expense =
+                expenseRepository.findById(id)
+                        .orElseThrow(() ->
+                                new ResourceNotFoundException(
+                                        "Expense not found"
+                                ));
 
-        Expense expense = expenseRepository.findById(id)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException("Expense not found"));
 
-        if (!expense.getUser().getId().equals(user.getId())) {
+        if (!expense.getUser()
+                .getId()
+                .equals(user.getId())) {
+
             throw new AccessDeniedException(
                     "You are not allowed to delete this expense"
             );
         }
 
+
         expenseRepository.delete(expense);
     }
+
+
+    // ==========================================
+    // CURRENT MONTH SUMMARY
+    // ==========================================
 
     public MonthlySummaryResponse getCurrentMonthSummary() {
 
         User user = getLoggedInUser();
 
-        LocalDate today = LocalDate.now();
-        LocalDate startDate = today.withDayOfMonth(1);
-        LocalDate endDate = today.withDayOfMonth(today.lengthOfMonth());
-
-        List<Expense> expenses =
-                expenseRepository.findByUserAndDateBetween(user, startDate, endDate);
-
-        Double totalSpending = expenses.stream()
-                .map(Expense::getAmount)
-                .reduce(0.0, Double::sum);
-
-        String month = today.getMonth()
-                .getDisplayName(java.time.format.TextStyle.FULL, java.util.Locale.ENGLISH);
-        int year = today.getYear();
-
-        // TODO: replace with real budget lookup once budgets are implemented
-        Double budget = 0.0;
-        Double remaining = budget - totalSpending;
-
-        return new MonthlySummaryResponse(month, year, totalSpending, budget, remaining);
-    }
-    public Map<String, Double> getCurrentMonthCategorySpending() {
-
-        User user = getLoggedInUser();
-
-        LocalDate today = LocalDate.now();
-
-        LocalDate startDate = today.withDayOfMonth(1);
-        LocalDate endDate = today.withDayOfMonth(
-                today.lengthOfMonth()
-        );
-
-        List<Expense> expenses =
-                expenseRepository.findByUserAndDateBetween(
-                        user,
-                        startDate,
-                        endDate
-                );
-
-        return expenses.stream()
-                .collect(Collectors.groupingBy(
-                        expense -> expense.getCategory().getName(),
-                        Collectors.summingDouble(
-                                Expense::getAmount
-                        )
-                ));
-    }
-    public String getHighestSpendingCategory() {
-
-        Map<String, Double> categorySpending =
-                getCurrentMonthCategorySpending();
-
-        return categorySpending.entrySet()
-                .stream()
-                .max(Map.Entry.comparingByValue())
-                .map(Map.Entry::getKey)
-                .orElse("No spending yet");
-    }
-
-
-    public List<ExpenseResponse> getRecentExpenses() {
-
-        User user = getLoggedInUser();
-
-        LocalDate today = LocalDate.now();
+        LocalDate today =
+                LocalDate.now();
 
         LocalDate startDate =
                 today.withDayOfMonth(1);
 
         LocalDate endDate =
-                today.withDayOfMonth(today.lengthOfMonth());
+                today.withDayOfMonth(
+                        today.lengthOfMonth()
+                );
+
 
         List<Expense> expenses =
                 expenseRepository.findByUserAndDateBetween(
@@ -310,9 +389,148 @@ public class ExpenseService {
                         endDate
                 );
 
+
+        Double totalSpending =
+                expenses.stream()
+                        .map(Expense::getAmount)
+                        .reduce(
+                                0.0,
+                                Double::sum
+                        );
+
+
+        String month =
+                today.getMonth()
+                        .getDisplayName(
+                                java.time.format.TextStyle.FULL,
+                                java.util.Locale.ENGLISH
+                        );
+
+        int year =
+                today.getYear();
+
+
+        Double budget = 0.0;
+
+        Double remaining =
+                budget - totalSpending;
+
+
+        return new MonthlySummaryResponse(
+                month,
+                year,
+                totalSpending,
+                budget,
+                remaining
+        );
+    }
+
+
+    // ==========================================
+    // CURRENT MONTH CATEGORY SPENDING
+    // ==========================================
+
+    public Map<String, Double>
+    getCurrentMonthCategorySpending() {
+
+        User user = getLoggedInUser();
+
+        LocalDate today =
+                LocalDate.now();
+
+        LocalDate startDate =
+                today.withDayOfMonth(1);
+
+        LocalDate endDate =
+                today.withDayOfMonth(
+                        today.lengthOfMonth()
+                );
+
+
+        List<Expense> expenses =
+                expenseRepository.findByUserAndDateBetween(
+                        user,
+                        startDate,
+                        endDate
+                );
+
+
+        return expenses.stream()
+                .collect(
+                        Collectors.groupingBy(
+                                expense ->
+                                        expense.getCategory()
+                                                .getName(),
+
+                                Collectors.summingDouble(
+                                        Expense::getAmount
+                                )
+                        )
+                );
+    }
+
+
+    // ==========================================
+    // HIGHEST SPENDING CATEGORY
+    // ==========================================
+
+    public String getHighestSpendingCategory() {
+
+        Map<String, Double>
+                categorySpending =
+                getCurrentMonthCategorySpending();
+
+
+        return categorySpending.entrySet()
+                .stream()
+                .max(
+                        Map.Entry.comparingByValue()
+                )
+                .map(
+                        Map.Entry::getKey
+                )
+                .orElse(
+                        "No spending yet"
+                );
+    }
+
+
+    // ==========================================
+    // RECENT EXPENSES
+    // ==========================================
+
+    public List<ExpenseResponse>
+    getRecentExpenses() {
+
+        User user =
+                getLoggedInUser();
+
+        LocalDate today =
+                LocalDate.now();
+
+        LocalDate startDate =
+                today.withDayOfMonth(1);
+
+        LocalDate endDate =
+                today.withDayOfMonth(
+                        today.lengthOfMonth()
+                );
+
+
+        List<Expense> expenses =
+                expenseRepository
+                        .findByUserAndDateBetween(
+                                user,
+                                startDate,
+                                endDate
+                        );
+
+
         return expenses.stream()
                 .sorted(
-                        Comparator.comparing(Expense::getDate)
+                        Comparator.comparing(
+                                        Expense::getDate
+                                )
                                 .reversed()
                                 .thenComparing(
                                         Expense::getCreatedAt,
@@ -322,55 +540,79 @@ public class ExpenseService {
                                 )
                 )
                 .limit(5)
-                .map(expense -> new ExpenseResponse(
-                        expense.getId(),
-                        expense.getAmount(),
-                        expense.getDescription(),
-                        expense.getDate(),
-                        expense.getCategory().getId(),
-                        expense.getCategory().getName()
-                ))
+                .map(expense ->
+                        new ExpenseResponse(
+                                expense.getId(),
+                                expense.getAmount(),
+                                expense.getDescription(),
+                                expense.getDate(),
+                                expense.getCategory() != null
+                                        ? expense.getCategory().getId()
+                                        : null,
+                                expense.getCategory() != null
+                                        ? expense.getCategory().getName()
+                                        : null
+                        )
+                )
                 .toList();
     }
 
 
+    // ==========================================
+    // MONTHLY SPENDING HISTORY
+    // ==========================================
+
+    public Map<String, Double>
+    getMonthlySpendingHistory() {
+
+        User user =
+                getLoggedInUser();
 
 
-    public Map<String, Double> getMonthlySpendingHistory() {
+        List<Expense> expenses =
+                expenseRepository.findByUser(user);
 
-        User user = getLoggedInUser();
-
-        List<Expense> expenses = expenseRepository.findByUser(user);
 
         return expenses.stream()
-                .collect(Collectors.groupingBy(
-                        expense -> expense.getDate().getYear()
-                                + "-" +
-                                String.format("%02d",
-                                        expense.getDate().getMonthValue()),
-                        Collectors.summingDouble(
-                                Expense::getAmount
+                .collect(
+                        Collectors.groupingBy(
+                                expense ->
+                                        expense.getDate()
+                                                .getYear()
+                                                + "-"
+                                                + String.format(
+                                                "%02d",
+                                                expense.getDate()
+                                                        .getMonthValue()
+                                        ),
+
+                                Collectors.summingDouble(
+                                        Expense::getAmount
+                                )
                         )
-                ));
+                );
     }
 
-    public List<ExpenseResponse> getExpensesByMonth(
+
+    // ==========================================
+    // GET EXPENSES BY MONTH
+    // ==========================================
+
+    public List<ExpenseResponse>
+    getExpensesByMonth(
             int month,
             int year) {
 
-        Authentication authentication =
-                SecurityContextHolder
-                        .getContext()
-                        .getAuthentication();
+        User user =
+                getLoggedInUser();
 
-        String email = authentication.getName();
-
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() ->
-                        new RuntimeException("User not found"));
 
         YearMonth yearMonth =
-                YearMonth.of(year, month);
+                YearMonth.of(
+                        year,
+                        month
+                );
+
 
         LocalDate startDate =
                 yearMonth.atDay(1);
@@ -378,12 +620,15 @@ public class ExpenseService {
         LocalDate endDate =
                 yearMonth.atEndOfMonth();
 
+
         List<Expense> expenses =
-                expenseRepository.findByUserAndDateBetween(
-                        user,
-                        startDate,
-                        endDate
-                );
+                expenseRepository
+                        .findByUserAndDateBetween(
+                                user,
+                                startDate,
+                                endDate
+                        );
+
 
         return expenses.stream()
                 .map(expense ->
@@ -403,23 +648,36 @@ public class ExpenseService {
                 .toList();
     }
 
-    public List<ExpenseResponse> getExpensesByDateRange(
+
+    // ==========================================
+    // GET EXPENSES BY DATE RANGE
+    // ==========================================
+
+    public List<ExpenseResponse>
+    getExpensesByDateRange(
             LocalDate startDate,
             LocalDate endDate) {
+
         if (endDate.isBefore(startDate)) {
+
             throw new IllegalArgumentException(
                     "End date cannot be before start date"
             );
         }
 
-        User user = getLoggedInUser();
+
+        User user =
+                getLoggedInUser();
+
 
         List<Expense> expenses =
-                expenseRepository.findByUserAndDateBetween(
-                        user,
-                        startDate,
-                        endDate
-                );
+                expenseRepository
+                        .findByUserAndDateBetween(
+                                user,
+                                startDate,
+                                endDate
+                        );
+
 
         return expenses.stream()
                 .map(expense ->
@@ -440,10 +698,17 @@ public class ExpenseService {
     }
 
 
-    public List<ExpenseResponse> searchExpensesByDescription(
+    // ==========================================
+    // SEARCH EXPENSES
+    // ==========================================
+
+    public List<ExpenseResponse>
+    searchExpensesByDescription(
             String description) {
 
-        User user = getLoggedInUser();
+        User user =
+                getLoggedInUser();
+
 
         List<Expense> expenses =
                 expenseRepository
@@ -452,6 +717,7 @@ public class ExpenseService {
                                 description
                         );
 
+
         return expenses.stream()
                 .map(expense ->
                         new ExpenseResponse(
@@ -470,33 +736,38 @@ public class ExpenseService {
                 .toList();
     }
 
+
+    // ==========================================
+    // DASHBOARD
+    // ==========================================
+
     public DashboardResponse getDashboard() {
 
-        User user = getLoggedInUser();
+        User user =
+                getLoggedInUser();
 
-        LocalDate today = LocalDate.now();
+        LocalDate today =
+                LocalDate.now();
 
 
         // 1. GET ALL EXPENSES
-
 
         List<Expense> allExpenses =
                 expenseRepository.findByUser(user);
 
 
-
         // 2. TOTAL SPENDING
-
 
         Double totalSpending =
                 allExpenses.stream()
                         .map(Expense::getAmount)
-                        .reduce(0.0, Double::sum);
-
+                        .reduce(
+                                0.0,
+                                Double::sum
+                        );
 
 
         // 3. CURRENT MONTH SPENDING
-
 
         LocalDate startOfMonth =
                 today.withDayOfMonth(1);
@@ -506,67 +777,83 @@ public class ExpenseService {
                         today.lengthOfMonth()
                 );
 
+
         List<Expense> monthlyExpenses =
-                expenseRepository.findByUserAndDateBetween(
-                        user,
-                        startOfMonth,
-                        endOfMonth
-                );
+                expenseRepository
+                        .findByUserAndDateBetween(
+                                user,
+                                startOfMonth,
+                                endOfMonth
+                        );
+
 
         Double monthlySpending =
                 monthlyExpenses.stream()
                         .map(Expense::getAmount)
-                        .reduce(0.0, Double::sum);
-
+                        .reduce(
+                                0.0,
+                                Double::sum
+                        );
 
 
         // 4. TODAY'S SPENDING
 
-
         Double todaySpending =
                 allExpenses.stream()
                         .filter(expense ->
-                                expense.getDate().equals(today))
+                                expense.getDate()
+                                        .equals(today)
+                        )
                         .map(Expense::getAmount)
-                        .reduce(0.0, Double::sum);
-
+                        .reduce(
+                                0.0,
+                                Double::sum
+                        );
 
 
         // 5. CATEGORY-WISE SPENDING
 
-
-        Map<String, Double> categorySpending =
+        Map<String, Double>
+                categorySpending =
                 monthlyExpenses.stream()
-                        .collect(Collectors.groupingBy(
-                                expense ->
-                                        expense.getCategory().getName(),
+                        .collect(
+                                Collectors.groupingBy(
+                                        expense ->
+                                                expense.getCategory()
+                                                        .getName(),
 
-                                Collectors.summingDouble(
-                                        Expense::getAmount
+                                        Collectors.summingDouble(
+                                                Expense::getAmount
+                                        )
                                 )
-                        ));
-
+                        );
 
 
         // 6. HIGHEST SPENDING CATEGORY
 
-
         String highestSpendingCategory =
                 categorySpending.entrySet()
                         .stream()
-                        .max(Map.Entry.comparingByValue())
-                        .map(Map.Entry::getKey)
-                        .orElse("No spending yet");
-
+                        .max(
+                                Map.Entry.comparingByValue()
+                        )
+                        .map(
+                                Map.Entry::getKey
+                        )
+                        .orElse(
+                                "No spending yet"
+                        );
 
 
         // 7. RECENT 5 EXPENSES
 
-
-        List<ExpenseResponse> recentExpenses =
+        List<ExpenseResponse>
+                recentExpenses =
                 allExpenses.stream()
                         .sorted(
-                                Comparator.comparing(Expense::getDate)
+                                Comparator.comparing(
+                                                Expense::getDate
+                                        )
                                         .reversed()
                                         .thenComparing(
                                                 Expense::getCreatedAt,
@@ -582,31 +869,40 @@ public class ExpenseService {
                                         expense.getAmount(),
                                         expense.getDescription(),
                                         expense.getDate(),
-                                        expense.getCategory().getId(),
-                                        expense.getCategory().getName()
+                                        expense.getCategory() != null
+                                                ? expense.getCategory().getId()
+                                                : null,
+                                        expense.getCategory() != null
+                                                ? expense.getCategory().getName()
+                                                : null
                                 )
                         )
                         .toList();
 
 
-
         // 8. REMAINING BUDGET
-
 
         Double remainingBudget = 0.0;
 
         try {
 
-            Map<String, Object> budgetStatus =
-                    spendingLimitService.getBudgetStatus();
+            Map<String, Object>
+                    budgetStatus =
+                    spendingLimitService
+                            .getBudgetStatus();
+
 
             Object remaining =
-                    budgetStatus.get("remaining");
+                    budgetStatus.get(
+                            "remaining"
+                    );
+
 
             if (remaining instanceof Number) {
 
                 remainingBudget =
-                        ((Number) remaining).doubleValue();
+                        ((Number) remaining)
+                                .doubleValue();
             }
 
         } catch (Exception ignored) {
@@ -615,9 +911,7 @@ public class ExpenseService {
         }
 
 
-
         // 9. CREATE DASHBOARD RESPONSE
-
 
         return new DashboardResponse(
                 totalSpending,

@@ -7,6 +7,8 @@ import {
 import api from "../services/api";
 import BackToDashboard from "../components/BackToDashboard";
 
+import Navbar from "../components/Navbar";
+
 function SpendingLimit() {
 
   const navigate = useNavigate();
@@ -714,9 +716,11 @@ function SpendingLimit() {
 
           </div>
 
-        )}
+             )}
 
       </div>
+
+      <Navbar />
 
     </div>
 

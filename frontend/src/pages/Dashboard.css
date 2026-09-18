@@ -278,3 +278,38 @@
 .budget-progress-exceeded {
   background: #dc2626;
 }
+
+/* Add Monthly Limit Button */
+
+.budget-card .add-limit-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  margin-top: 10px;
+  padding: 8px 14px;
+
+  background: #111827;
+  color: #ffffff;
+
+  border: 1px solid #111827;
+  border-radius: 8px;
+
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 600;
+
+  transition:
+    background 0.2s ease,
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.budget-card .add-limit-button:hover {
+  background: #374151;
+  color: #ffffff;
+
+  transform: translateY(-1px);
+
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
+}

@@ -1,9 +1,6 @@
 package com.expensetracker.BuckSave.Controller;
 
-import com.expensetracker.BuckSave.dto.AuthResponse;
-import com.expensetracker.BuckSave.dto.LoginRequest;
-import com.expensetracker.BuckSave.dto.UserRequest;
-import com.expensetracker.BuckSave.dto.UserResponse;
+import com.expensetracker.BuckSave.dto.*;
 import com.expensetracker.BuckSave.entity.RefreshToken;
 import com.expensetracker.BuckSave.entity.User;
 import com.expensetracker.BuckSave.service.AuthService;
@@ -70,6 +67,20 @@ public class AuthController {
 
         return ResponseEntity.ok(
                 "Logged out successfully"
+        );
+    }
+
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<String> forgotPassword(
+            @Valid @RequestBody ForgotPasswordRequest request) {
+
+        authService.forgotPassword(
+                request.getEmail()
+        );
+
+        return ResponseEntity.ok(
+                "Password reset request created"
         );
     }
 }

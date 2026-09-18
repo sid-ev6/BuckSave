@@ -1,5 +1,6 @@
 package com.expensetracker.BuckSave.repository;
 
+import com.expensetracker.BuckSave.entity.Category;
 import com.expensetracker.BuckSave.entity.Expense;
 import com.expensetracker.BuckSave.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -20,4 +21,5 @@ public interface ExpenseRepository extends JpaRepository<Expense, Long> {
             User user,
             String description
     );
+
 }

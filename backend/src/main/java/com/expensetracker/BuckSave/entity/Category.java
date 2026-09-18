@@ -5,7 +5,7 @@ import lombok.*;
 
 @Entity
 @Data
-@Table(name="Category")
+@Table(name = "Category")
 @NoArgsConstructor
 @AllArgsConstructor
 public class Category {
@@ -18,6 +18,6 @@ public class Category {
     private String name;
 
     @ManyToOne
-    @JoinColumn(name = "User_id", nullable = false)
+    @JoinColumn(name = "User_id", nullable = true)
     private User user;
 }

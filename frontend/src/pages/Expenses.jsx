@@ -5,6 +5,8 @@ import "./Expenses.css";
 import BackToDashboard from "../components/BackToDashboard";
 import { formatDate } from "../utils/dateUtils";
 
+import Navbar from "../components/Navbar";
+
 function Expenses() {
 
     const [searchParams] = useSearchParams();
@@ -14,6 +16,7 @@ const spendingLimitId =
   const [expenses, setExpenses] = useState([]);
   const [spendingLimit, setSpendingLimit] = useState(null);
   const [loading, setLoading] = useState(true);
+ 
 
   useEffect(() => {
 
@@ -127,6 +130,7 @@ const sortedExpenses = [...expenses].sort(
 
         <div className="expenses-card">
 
+
           {loading ? (
             <p className="expenses-message">
               Loading expenses...
@@ -204,10 +208,11 @@ const sortedExpenses = [...expenses].sort(
 
         </div>
 
-      </div>
+            </div>
+
+      <Navbar />
 
     </div>
   );
 }
-
 export default Expenses;

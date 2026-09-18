@@ -1,6 +1,6 @@
-
 import { useNavigate } from "react-router-dom";
 import "./Profile.css";
+import Navbar from "../components/Navbar";
 
 function Profile() {
   const navigate = useNavigate();
@@ -14,6 +14,7 @@ function Profile() {
 
   return (
     <div className="profile-page">
+
       <div className="profile-card">
         <h1>Profile</h1>
 
@@ -26,9 +27,11 @@ function Profile() {
           Logout
         </button>
       </div>
+
+      <Navbar />
+
     </div>
   );
 }
 
 export default Profile;
-

@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import {
   LineChart,
   Line,
@@ -14,6 +13,8 @@ import {
 
 import api from "../services/api";
 import "./Analytics.css";
+import BackToDashboard from "../components/BackToDashboard";
+import Navbar from "../components/Navbar";
 
 function Analytics() {
   const [monthlyData, setMonthlyData] = useState([]);
@@ -91,9 +92,7 @@ function Analytics() {
         {/* Header */}
 
         <div className="analytics-header">
-          <Link to="/dashboard" className="back-link">
-            ← Dashboard
-          </Link>
+          <BackToDashboard />
 
           <div>
             <h1>Analytics</h1>
@@ -337,9 +336,12 @@ function Analytics() {
 
             </div>
           </>
-        )}
+                )}
 
       </div>
+
+      <Navbar />
+
     </div>
   );
 }

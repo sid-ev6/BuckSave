@@ -1,5 +1,12 @@
 package com.expensetracker.BuckSave.service;
 
+
+import com.expensetracker.BuckSave.entity.PasswordResetToken;
+import com.expensetracker.BuckSave.repository.PasswordResetTokenRepository;
+
+import java.time.LocalDateTime;
+import java.util.UUID;
+
 import com.expensetracker.BuckSave.dto.AuthResponse;
 import com.expensetracker.BuckSave.dto.LoginRequest;
 import com.expensetracker.BuckSave.dto.UserRequest;
@@ -21,66 +28,104 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
     private final RefreshTokenService refreshTokenService;
-    private final CategoryService categoryService;
+    private final PasswordResetTokenRepository passwordResetTokenRepository;
 
     public AuthService(
             UserRepository userRepository,
             PasswordEncoder passwordEncoder,
             AuthenticationManager authenticationManager,
             JwtService jwtService,
-            RefreshTokenService refreshTokenService,
-            CategoryService categoryService) {
+            RefreshTokenService refreshTokenService, PasswordResetTokenRepository passwordResetTokenRepository) {
 
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.authenticationManager = authenticationManager;
         this.jwtService = jwtService;
         this.refreshTokenService = refreshTokenService;
-        this.categoryService = categoryService;
+        this.passwordResetTokenRepository = passwordResetTokenRepository;
     }
 
+
+    // ==========================================
     // REGISTER
+    // ==========================================
+
     @Transactional
     public User register(UserRequest request) {
-        if (userRepository.existsByEmail(request.getEmail())) {
+
+        if (userRepository.existsByEmail(
+                request.getEmail())) {
+
             throw new IllegalArgumentException(
                     "Email is already registered"
             );
         }
 
-        if (userRepository.existsByUsername(request.getUsername())) {
+
+        if (userRepository.existsByUsername(
+                request.getUsername())) {
+
             throw new IllegalArgumentException(
                     "Username is already taken"
             );
         }
 
+
         User user = new User();
 
-        user.setName(request.getName());
-        user.setEmail(request.getEmail());
-        user.setUsername(request.getUsername());
-        user.setPassword(
-                passwordEncoder.encode(request.getPassword())
+        user.setName(
+                request.getName()
         );
 
-        User savedUser = userRepository.save(user);
+        user.setEmail(
+                request.getEmail()
+        );
 
-        categoryService.createDefaultCategories(savedUser);
+        user.setUsername(
+                request.getUsername()
+        );
+
+        user.setPassword(
+                passwordEncoder.encode(
+                        request.getPassword()
+                )
+        );
+
+
+        User savedUser =
+                userRepository.save(user);
+
+
+        // Default categories are shared globally.
+        // They are NOT created for each user.
+
 
         return savedUser;
     }
 
-    // LOGIN
-    public AuthResponse login(LoginRequest request) {
 
-        User user = userRepository.findByEmail(request.getLogin())
-                .orElseGet(() ->
-                        userRepository.findByUsername(request.getLogin())
-                                .orElseThrow(() ->
-                                        new RuntimeException(
-                                                "Invalid username or email"
-                                        ))
-                );
+    // ==========================================
+    // LOGIN
+    // ==========================================
+
+    public AuthResponse login(
+            LoginRequest request) {
+
+        User user =
+                userRepository.findByEmail(
+                                request.getLogin()
+                        )
+                        .orElseGet(() ->
+                                userRepository
+                                        .findByUsername(
+                                                request.getLogin()
+                                        )
+                                        .orElseThrow(() ->
+                                                new RuntimeException(
+                                                        "Invalid username or email"
+                                                ))
+                        );
+
 
         try {
 
@@ -98,42 +143,132 @@ public class AuthService {
             );
         }
 
-        String accessToken = jwtService.generateToken(
-                org.springframework.security.core.userdetails.User
-                        .withUsername(user.getEmail())
-                        .password(user.getPassword())
-                        .roles("USER")
-                        .build()
-        );
+
+        String accessToken =
+                jwtService.generateToken(
+                        org.springframework.security.core.userdetails.User
+                                .withUsername(
+                                        user.getEmail()
+                                )
+                                .password(
+                                        user.getPassword()
+                                )
+                                .roles("USER")
+                                .build()
+                );
+
 
         RefreshToken refreshToken =
                 refreshTokenService.createRefreshToken(
                         user.getEmail()
                 );
 
+
         return new AuthResponse(
                 accessToken,
                 refreshToken.getToken()
         );
     }
+
+
+    // ==========================================
+    // REFRESH ACCESS TOKEN
+    // ==========================================
+
     public AuthResponse refreshAccessToken(
             RefreshToken refreshToken) {
 
-        refreshTokenService.verifyExpiration(refreshToken);
-
-        User user = refreshToken.getUser();
-
-        String accessToken = jwtService.generateToken(
-                org.springframework.security.core.userdetails.User
-                        .withUsername(user.getEmail())
-                        .password(user.getPassword())
-                        .roles("USER")
-                        .build()
+        refreshTokenService.verifyExpiration(
+                refreshToken
         );
+
+
+        User user =
+                refreshToken.getUser();
+
+
+        String accessToken =
+                jwtService.generateToken(
+                        org.springframework.security.core.userdetails.User
+                                .withUsername(
+                                        user.getEmail()
+                                )
+                                .password(
+                                        user.getPassword()
+                                )
+                                .roles("USER")
+                                .build()
+                );
+
 
         return new AuthResponse(
                 accessToken,
                 refreshToken.getToken()
         );
+    }
+
+
+@Transactional
+public void forgotPassword(String email) {
+
+    User user =
+            userRepository.findByEmail(email)
+                    .orElseThrow(() ->
+                            new RuntimeException(
+                                    "No account found with this email"
+                            ));
+
+    passwordResetTokenRepository.deleteByUser(user);
+
+    passwordResetTokenRepository.flush();
+
+    PasswordResetToken resetToken =
+            new PasswordResetToken();
+
+    resetToken.setToken(
+            UUID.randomUUID().toString()
+    );
+
+    resetToken.setUser(user);
+
+    resetToken.setExpiryDate(
+            LocalDateTime.now().plusMinutes(15)
+    );
+
+    passwordResetTokenRepository.save(resetToken);
+}
+
+    @Transactional
+    public void resetPassword(
+            String token,
+            String newPassword) {
+
+        PasswordResetToken resetToken =
+                passwordResetTokenRepository
+                        .findByToken(token)
+                        .orElseThrow(() ->
+                                new RuntimeException(
+                                        "Invalid password reset token"
+                                ));
+
+        if (resetToken.getExpiryDate()
+                .isBefore(LocalDateTime.now())) {
+
+            passwordResetTokenRepository.delete(resetToken);
+
+            throw new RuntimeException(
+                    "Password reset token has expired"
+            );
+        }
+
+        User user = resetToken.getUser();
+
+        user.setPassword(
+                passwordEncoder.encode(newPassword)
+        );
+
+        userRepository.save(user);
+
+        passwordResetTokenRepository.delete(resetToken);
     }
 }
